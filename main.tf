@@ -27,7 +27,7 @@ data "aws_ami" "ubuntu" {
   most_recent = true
   filter {
     name   = "name"
-    values = ["ubuntu/images/hvm-ssd/ubuntu-*-16.04-amd64-server-*"]
+    values = ["ubuntu/images/hvm-ssd/ubuntu-*-20.04-amd64-server-*"]
   }
   filter {
     name = "virtualization-type"
@@ -54,7 +54,7 @@ resource "aws_launch_configuration" "wireguard_launch_config" {
   name_prefix = "wireguard-${var.env}-"
   image_id = var.ami_id == null ? data.aws_ami.ubuntu.id : var.ami_id
   instance_type = var.instance_type
-  spot_price = "0.01"
+  spot_price = "0.02"
   key_name = var.ssh_key_id
   iam_instance_profile = (var.eip_id != "disabled" ? aws_iam_instance_profile.wireguard_profile[0].name : null)
   user_data = data.template_file.user_data.rendered
