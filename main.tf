@@ -3,11 +3,12 @@ data "template_file" "user_data" {
 
   vars = {
     wg_server_private_key = data.aws_ssm_parameter.wg_server_private_key.value
-    wg_server_net = var.wg_server_net
-    wg_server_port = var.wg_server_port
-    peers = join("\n", data.template_file.wg_client_data_json.*.rendered)
-    eip_id = var.eip_id
-    wg_server_interface = var.wg_server_interface
+    wg_server_net         = var.wg_server_net
+    wg_server_port        = var.wg_server_port
+    peers                 = join("\n", data.template_file.wg_client_data_json.*.rendered)
+    use_eip               = var.use_eip ? "enabled" : "disabled"
+    eip_id                = var.eip_id
+    wg_server_interface   = var.wg_server_interface
   }
 }
 
@@ -51,15 +52,15 @@ locals {
 }
 
 resource "aws_launch_configuration" "wireguard_launch_config" {
-  name_prefix = "wireguard-${var.env}-"
-  image_id = var.ami_id == null ? data.aws_ami.ubuntu.id : var.ami_id
-  instance_type = var.instance_type
+  name_prefix                 = "wireguard-${var.env}-"
+  image_id                    = var.ami_id == null ? data.aws_ami.ubuntu.id : var.ami_id
+  instance_type               = var.instance_type
+  key_name                    = var.ssh_key_id
+  iam_instance_profile        = (var.use_eip ? aws_iam_instance_profile.wireguard_profile[0].name : null)
+  user_data                   = data.template_file.user_data.rendered
+  security_groups             = local.security_groups_ids
+
   spot_price = "0.02"
-  key_name = var.ssh_key_id
-  iam_instance_profile = (var.eip_id != "disabled" ? aws_iam_instance_profile.wireguard_profile[0].name : null)
-  user_data = data.template_file.user_data.rendered
-  security_groups = local.security_groups_ids
-  //  associate_public_ip_address = (var.eip_id != "disabled" ? true : false)
   associate_public_ip_address = true
 
   lifecycle {
